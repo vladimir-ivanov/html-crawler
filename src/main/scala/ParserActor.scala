@@ -14,34 +14,44 @@ class ParserActor extends Actor with ActorLogging {
 
     case CurrentUrl(link) => {
 
-      val parser: Parser = new Parser(link + Config.get("crawlerSuffix"));
-      var internalHrefs: Set[String] = Set()
+      try {
+        val parser: Parser = new Parser(link + Config.get("crawlerSuffix"));
+        var internalHrefs: Set[String] = Set()
 
-      log.info(link + Config.get("crawlerSuffix"))
+        log.info(link + Config.get("crawlerSuffix"))
 
-      val linkNodes = parser.parse(new AndFilter(
-        new TagNameFilter("A"),
-        new HasAttributeFilter("href")
-      ))
+        val linkNodes = parser.parse(new AndFilter(
+          new TagNameFilter("A"),
+          new HasAttributeFilter("href")
+        ))
 
-      linkNodes.toNodeArray.foreach(p => {
+        linkNodes.toNodeArray.foreach(p => {
 
-        var href = p.asInstanceOf[TagNode].getAttribute("href")
+          var href = p.asInstanceOf[TagNode].getAttribute("href")
 
-        if (!href.startsWith("http") && !href.startsWith("mailto") && !href.isEmpty) {
+          if (!href.startsWith("http") && !href.startsWith("mailto") && !href.isEmpty) {
 
-          href = Config.get("baseUrl").concat(href)
-          internalHrefs = internalHrefs + href
+            href = Config.get("baseUrl").concat(href)
+            internalHrefs = internalHrefs + href
+          }
+        })
+
+        context.sender ! ParsedLinks(internalHrefs)
+      } catch {
+        case e: Exception => {
+          val wrapperException = new Exception("Unable to parse/fetch " + link, e)
+          context.sender ! Failure(wrapperException)
         }
-      })
-
-      context.sender ! ParsedLinks(internalHrefs)
+      }
     }
 
-    case ReceiveTimeout ⇒
-      // To turn it off
-      context.setReceiveTimeout(Duration.Undefined)
-      throw new RuntimeException("Receive timed out")
+//    case ReceiveTimeout => {
+//      // To turn it off
+//      context.setReceiveTimeout(Duration.Undefined)
+//      throw new RuntimeException("Receive timed out")
+//    }
+
   }
+
   //@see http://doc.akka.io/docs/akka/snapshot/scala/actors.html
 }
