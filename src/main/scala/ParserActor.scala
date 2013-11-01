@@ -1,21 +1,23 @@
 package main.scala
 
-import akka.actor.{ReceiveTimeout, ActorLogging, Actor}
+import akka.actor.{ActorLogging, Actor}
 import org.htmlparser.Parser
 import org.htmlparser.filters.{HasAttributeFilter, TagNameFilter, AndFilter}
 import org.htmlparser.nodes.TagNode
-import scala.concurrent.duration.Duration
+
 
 case class CurrentUrl(url: String)
 
-//TODO - try catch everything and push via Failed case classes if not done automatically
-class ParserActor extends Actor with ActorLogging {
+class ParserActor(parser: Parser) extends Actor with ActorLogging {
+
   def receive = {
 
     case CurrentUrl(link) => {
 
       try {
-        val parser: Parser = new Parser(link + Config.get("crawlerSuffix"));
+
+        parser.setURL(link + Config.get("crawlerSuffix"));
+
         var internalHrefs: Set[String] = Set()
 
         log.info(link + Config.get("crawlerSuffix"))
@@ -37,7 +39,9 @@ class ParserActor extends Actor with ActorLogging {
         })
 
         context.sender ! ParsedLinks(internalHrefs)
+
       } catch {
+
         case e: Exception => {
           val wrapperException = new Exception("Unable to parse/fetch " + link, e)
           context.sender ! Failure(wrapperException)

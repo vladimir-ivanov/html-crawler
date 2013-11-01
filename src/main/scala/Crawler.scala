@@ -2,6 +2,7 @@ package main.scala
 
 import akka.actor._
 import scala.Predef._
+import org.htmlparser.Parser
 
 
 object Crawler {
@@ -18,9 +19,11 @@ object Crawler {
     val siteMapLinks = SiteMapReader.getLinks(rawResponse);
 
     val system = ActorSystem("CrawlerSystem")
-    val log = akka.event.Logging(system, this)
+  //  val log = akka.event.Logging.getLogger(system)
+
     val crawler = system.actorOf(Props[CrawlerActor], name = "crawler")
 
+//    log.info("message herfe");
     crawler ! StartUp(siteMapLinks, 5)
     // shut down the actor system once the array is empty
 
@@ -39,11 +42,16 @@ case class ShutDown()
 
 class CrawlerActor extends Actor with ActorLogging {
 
-  val http = new Http;
+  var http:Http = null
   var visitedLinks: Set[String] = Set()
   var notVisitedLinks: Set[String] = Set()
   var currentNumberOfCallsAtStart = 0
   var parser: ActorRef = null
+
+  override def preStart(): Unit = {
+    http = new Http;
+    parser = context.system.actorOf(Props(classOf[ParserActor], new Parser()), name = "parser")
+  }
 
   override def postStop(): Unit = {
     log.info(context.self.toString + " - Actor Stopped")
@@ -53,8 +61,6 @@ class CrawlerActor extends Actor with ActorLogging {
   def receive = {
 
     case StartUp(links, maxConcurrentCalls) => {
-
-      parser = context.system.actorOf(Props[ParserActor], name = "parser")
 
       notVisitedLinks = links
       //TODO - make currentNumberOfCallsAtStart to equal length of Set if less than maxConcurrentCalls
