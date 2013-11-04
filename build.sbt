@@ -20,3 +20,5 @@ libraryDependencies += "org.scalamock" %% "scalamock-scalatest-support" % "3.0.1
 
 libraryDependencies += "org.scalamock" %% "scalamock-specs2-support" % "3.0.1" % "test"
 
+libraryDependencies += "org.mockito" % "mockito-core" % "1.9.5-rc1"
+
