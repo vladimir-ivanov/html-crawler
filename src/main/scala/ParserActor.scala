@@ -8,7 +8,7 @@ import org.htmlparser.nodes.TagNode
 
 case class CurrentUrl(url: String)
 
-class ParserActor(parser: Parser) extends Actor with ActorLogging {
+class ParserActor(parser: Parser, prefix: String) extends Actor with ActorLogging {
 
   def receive = {
 
@@ -16,11 +16,13 @@ class ParserActor(parser: Parser) extends Actor with ActorLogging {
 
       try {
 
-        parser.setURL(link + Config.get("crawlerSuffix"));
+        val url: String = link + prefix
+        parser.setURL(url);
+
+        log.info(url)
 
         var internalHrefs: Set[String] = Set()
 
-        log.info(link + Config.get("crawlerSuffix"))
 
         val linkNodes = parser.parse(new AndFilter(
           new TagNameFilter("A"),
@@ -49,11 +51,11 @@ class ParserActor(parser: Parser) extends Actor with ActorLogging {
       }
     }
 
-//    case ReceiveTimeout => {
-//      // To turn it off
-//      context.setReceiveTimeout(Duration.Undefined)
-//      throw new RuntimeException("Receive timed out")
-//    }
+    //    case ReceiveTimeout => {
+    //      // To turn it off
+    //      context.setReceiveTimeout(Duration.Undefined)
+    //      throw new RuntimeException("Receive timed out")
+    //    }
 
   }
 

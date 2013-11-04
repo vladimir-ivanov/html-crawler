@@ -10,7 +10,6 @@ object Crawler {
   def main(args: Array[String]) = {
 
 
-
     val siteMapUrl = Config.get("siteMapUrl")
     val http = new Http;
 
@@ -19,14 +18,12 @@ object Crawler {
     val siteMapLinks = SiteMapReader.getLinks(rawResponse);
 
     val system = ActorSystem("CrawlerSystem")
-  //  val log = akka.event.Logging.getLogger(system)
+    //  val log = akka.event.Logging.getLogger(system)
 
-    val crawler = system.actorOf(Props[CrawlerActor], name = "crawler")
+    val parser = system.actorOf(Props(classOf[ParserActor], new Parser), name = "parser")
+    val crawler = system.actorOf(Props(classOf[CrawlerActor], new Http, parser), name = "crawler")
 
-//    log.info("message herfe");
     crawler ! StartUp(siteMapLinks, 5)
-    // shut down the actor system once the array is empty
-
   }
 }
 
@@ -38,24 +35,12 @@ case class Failure(message: Exception)
 
 case class ShutDown()
 
-// shut down the system once the array is empty
 
-class CrawlerActor extends Actor with ActorLogging {
+class CrawlerActor(http: Http, parser: ActorRef) extends Actor with ActorLogging {
 
-  var http:Http = null
   var visitedLinks: Set[String] = Set()
   var notVisitedLinks: Set[String] = Set()
   var currentNumberOfCallsAtStart = 0
-  var parser: ActorRef = null
-
-  override def preStart(): Unit = {
-    http = new Http;
-    parser = context.system.actorOf(Props(classOf[ParserActor], new Parser()), name = "parser")
-  }
-
-  override def postStop(): Unit = {
-    log.info(context.self.toString + " - Actor Stopped")
-  }
 
 
   def receive = {
@@ -63,12 +48,10 @@ class CrawlerActor extends Actor with ActorLogging {
     case StartUp(links, maxConcurrentCalls) => {
 
       notVisitedLinks = links
-      //TODO - make currentNumberOfCallsAtStart to equal length of Set if less than maxConcurrentCalls
+
       currentNumberOfCallsAtStart = maxConcurrentCalls
 
       for (a <- 1 to currentNumberOfCallsAtStart) {
-
-
 
         if (!notVisitedLinks.isEmpty) {
 
