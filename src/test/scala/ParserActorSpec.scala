@@ -8,6 +8,8 @@ import org.mockito.stubbing.Answer
 import org.scalatest.mock.MockitoSugar
 import scala.util.Random
 
+import org.mockito.Matchers.any
+
 import org.htmlparser.Parser
 
 import org.scalatest.BeforeAndAfterAll
@@ -35,28 +37,11 @@ class TestKitUsageSpec
     ConfigFactory.parseString(TestKitUsageSpec.config)))
   with DefaultTimeout with ImplicitSender
   with WordSpecLike with Matchers with BeforeAndAfterAll with MockitoSugar {
-  import TestKitUsageSpec._
-
-//  val echoRef = system.actorOf(Props[EchoActor])
-//  val forwardRef = system.actorOf(Props(classOf[ForwardingActor], testActor))
-//  val filterRef = system.actorOf(Props(classOf[FilteringActor], testActor))
-//  val randomHead = Random.nextInt(6)
-//  val randomTail = Random.nextInt(10)
-//  val headList = immutable.Seq().padTo(randomHead, "0")
-//  val tailList = immutable.Seq().padTo(randomTail, "1")
-//  val seqRef =
-//    system.actorOf(Props(classOf[SequencingActor], testActor, headList, tailList))
 
   val parser = mock[Parser]
-  parser.setURL("fsdfs")
-//  Mockito.when(parser.parse(new AndFilter(
-//    new TagNameFilter("A"),
-//    new HasAttributeFilter("href")
-//  ))).thenReturn(new NodeList())
 
-//  Mockito.stub(parser.setURL("http://test.com")).toReturn()
-//
- // Mockito.doThrow(Exception).when(mock).setURL("http://test.com");
+  Mockito.stub(parser.parse(any(classOf[AndFilter]))).toReturn(new NodeList)
+
   val parserActorRef = system.actorOf(Props(classOf[ParserActor], parser, Config.get("crawlerSuffix")))
 
   override def afterAll {
@@ -81,49 +66,4 @@ object TestKitUsageSpec {
       loglevel = "WARNING"
     }
                """
-
-  /**
-   * An Actor that echoes everything you send to it
-   */
-  class EchoActor extends Actor {
-    def receive = {
-      case msg ⇒ sender ! msg
-    }
-  }
-
-  /**
-   * An Actor that forwards every message to a next Actor
-   */
-  class ForwardingActor(next: ActorRef) extends Actor {
-    def receive = {
-      case msg ⇒ next ! msg
-    }
-  }
-
-  /**
-   * An Actor that only forwards certain messages to a next Actor
-   */
-  class FilteringActor(next: ActorRef) extends Actor {
-    def receive = {
-      case msg: String ⇒ next ! msg
-      case _           ⇒ None
-    }
-  }
-
-  /**
-   * An actor that sends a sequence of messages with a random head list, an
-   * interesting value and a random tail list. The idea is that you would
-   * like to test that the interesting value is received and that you cant
-   * be bothered with the rest
-   */
-  class SequencingActor(next: ActorRef, head: immutable.Seq[String],
-                        tail: immutable.Seq[String]) extends Actor {
-    def receive = {
-      case msg ⇒ {
-        head foreach { next ! _ }
-        next ! msg
-        tail foreach { next ! _ }
-      }
-    }
-  }
 }
