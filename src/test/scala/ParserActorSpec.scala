@@ -1,5 +1,5 @@
 
-import main.scala.{CurrentUrl, ParserActor}
+import main.scala.{CurrentUrl, ParserActor, Config}
 import org.htmlparser.filters.{HasAttributeFilter, TagNameFilter, AndFilter}
 import org.htmlparser.util.NodeList
 import org.mockito.invocation.InvocationOnMock
@@ -48,15 +48,16 @@ class TestKitUsageSpec
 //    system.actorOf(Props(classOf[SequencingActor], testActor, headList, tailList))
 
   val parser = mock[Parser]
-  Mockito.when(parser.parse(new AndFilter(
-    new TagNameFilter("A"),
-    new HasAttributeFilter("href")
-  ))).thenReturn(new NodeList())
+  parser.setURL("fsdfs")
+//  Mockito.when(parser.parse(new AndFilter(
+//    new TagNameFilter("A"),
+//    new HasAttributeFilter("href")
+//  ))).thenReturn(new NodeList())
 
 //  Mockito.stub(parser.setURL("http://test.com")).toReturn()
 //
  // Mockito.doThrow(Exception).when(mock).setURL("http://test.com");
-  val parserActorRef = system.actorOf(Props(classOf[ParserActor], parser))
+  val parserActorRef = system.actorOf(Props(classOf[ParserActor], parser, Config.get("crawlerSuffix")))
 
   override def afterAll {
     shutdown(system)
